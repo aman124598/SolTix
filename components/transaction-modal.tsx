@@ -105,21 +105,19 @@ export function TransactionModal({
             {(state === 'success' || state === 'error') && (
               <TouchableOpacity
                 onPress={onClose}
-                className={`flex-1 rounded-2xl py-4 items-center ${
-                  state === 'success'
+                className={`flex-1 rounded-2xl py-4 items-center ${state === 'success'
                     ? 'bg-solana-green border border-solana-green/50'
                     : 'bg-surface-card border border-gray-600/50'
-                }`}
+                  }`}
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel={state === 'success' ? 'Done' : 'Close modal'}
               >
                 <View className="flex-row items-center gap-2">
                   {state === 'success' && <Ionicons name="checkmark" size={20} color="#1a1a2e" />}
-                  <Text 
-                    className={`font-bold text-base ${
-                      state === 'success' ? 'text-surface-dark' : 'text-white'
-                    }`}
+                  <Text
+                    className={`font-bold text-base ${state === 'success' ? 'text-surface-dark' : 'text-white'
+                      }`}
                   >
                     {state === 'success' ? 'Done' : 'Close'}
                   </Text>
