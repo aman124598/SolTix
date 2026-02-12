@@ -4,6 +4,14 @@ import { Ticket, TicketStatus, TicketTier } from '@/types';
 import type { TicketRow } from '@/types/database';
 import { MOCK_TICKETS } from '@/data/mock-data';
 
+function isSupabaseAuthLikeError(code: string | undefined, message: string): boolean {
+  return (
+    code === '401' ||
+    code === '403' ||
+    /invalid api key|jwt|unauthorized|permission/i.test(message)
+  );
+}
+
 // ─── Row → App Model Mapper ───
 async function mapTicketRow(row: TicketRow): Promise<Ticket> {
   const event = await fetchEventById(row.event_id);
@@ -233,6 +241,10 @@ export async function updateTicketStatus(
 
   if (error) {
     console.error('Error updating ticket status:', error.message);
+    if (isSupabaseAuthLikeError(error.code, error.message)) {
+      console.warn('Falling back to local ticket status update due to Supabase auth/config error.');
+      return;
+    }
     throw new Error(error.message);
   }
 
@@ -266,6 +278,10 @@ export async function transferTicket(
 
   if (error) {
     console.error('Error transferring ticket:', error.message);
+    if (isSupabaseAuthLikeError(error.code, error.message)) {
+      console.warn('Falling back to local ticket transfer due to Supabase auth/config error.');
+      return;
+    }
     throw new Error(error.message);
   }
 

@@ -1,6 +1,6 @@
 import { getSupabase } from '@/services/supabase';
 import { fetchTicketById } from '@/services/ticket-service';
-import { ListingStatus, MarketplaceListing } from '@/types';
+import { ListingStatus, MarketplaceListing, Ticket } from '@/types';
 import type { MarketplaceListingRow } from '@/types/database';
 import { MOCK_LISTINGS } from '@/data/mock-data';
 
@@ -159,10 +159,11 @@ export async function createListing(params: {
   listPrice: number;
   maxAllowedPrice: number;
   royaltyPercentage: number;
+  ticket?: Ticket;
 }): Promise<MarketplaceListing> {
   const supabase = getSupabase();
   if (!supabase) {
-    const ticket = await fetchTicketById(params.ticketId);
+    const ticket = params.ticket ?? (await fetchTicketById(params.ticketId));
     if (!ticket) {
       throw new Error(`Ticket not found for listing creation: ${params.ticketId}`);
     }
@@ -203,7 +204,7 @@ export async function createListing(params: {
     console.error('Error creating listing:', error.message);
     if (isSupabaseAuthLikeError(error.code, error.message)) {
       console.warn('Falling back to local listing creation due to Supabase auth/config error.');
-      const ticket = await fetchTicketById(params.ticketId);
+      const ticket = params.ticket ?? (await fetchTicketById(params.ticketId));
       if (!ticket) {
         throw new Error(`Ticket not found for listing creation: ${params.ticketId}`);
       }
