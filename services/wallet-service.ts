@@ -213,6 +213,20 @@ function waitForConnectCallback(): Promise<void> {
   });
 }
 
+async function openWalletDeepLinkWithFallback(
+  schemeUrl: string,
+  universalUrl: string
+): Promise<void> {
+  try {
+    await Linking.openURL(schemeUrl);
+    return;
+  } catch (schemeError) {
+    console.warn('Failed to open wallet scheme URL, falling back to universal link.', schemeError);
+  }
+
+  await Linking.openURL(universalUrl);
+}
+
 async function getStoredValue(key: string): Promise<string | null> {
   if (isWeb()) {
     if (typeof window === 'undefined' || !window.localStorage) {
@@ -357,15 +371,8 @@ export async function connectPhantomWallet(): Promise<{
     const schemeConnectUrl = `phantom://ul/v1/connect?${params.toString()}`;
     const universalConnectUrl = `https://phantom.app/ul/v1/connect?${params.toString()}`;
 
-    const supported = await Linking.canOpenURL('phantom://');
-
-    if (supported) {
-      await Linking.openURL(schemeConnectUrl);
-      return null; // Will be resolved via deep link callback
-    } else {
-      await Linking.openURL(universalConnectUrl);
-      return null;
-    }
+    await openWalletDeepLinkWithFallback(schemeConnectUrl, universalConnectUrl);
+    return null; // Will be resolved via deep link callback
   } catch (error) {
     console.error('Error connecting Phantom:', error);
     throw new Error('Failed to connect to Phantom wallet');
@@ -414,15 +421,8 @@ export async function connectSolflareWallet(): Promise<{
     const schemeConnectUrl = `solflare://ul/v1/connect?${params.toString()}`;
     const universalConnectUrl = `https://solflare.com/ul/v1/connect?${params.toString()}`;
 
-    const supported = await Linking.canOpenURL('solflare://');
-
-    if (supported) {
-      await Linking.openURL(schemeConnectUrl);
-      return null;
-    } else {
-      await Linking.openURL(universalConnectUrl);
-      return null;
-    }
+    await openWalletDeepLinkWithFallback(schemeConnectUrl, universalConnectUrl);
+    return null;
   } catch (error) {
     console.error('Error connecting Solflare:', error);
     throw new Error('Failed to connect to Solflare wallet');
@@ -616,6 +616,19 @@ export async function restoreSavedWallet(): Promise<{
 // ─── Disconnect Wallet ───
 export async function disconnectWallet(): Promise<void> {
   try {
+    if (isWeb()) {
+      const providers = [getPhantomProvider(), getSolflareProvider()].filter(Boolean) as SolanaProvider[];
+      await Promise.allSettled(
+        providers.map(async (provider) => {
+          try {
+            await provider.disconnect();
+          } catch {
+            // Ignore provider disconnect errors; local session cleanup still proceeds.
+          }
+        })
+      );
+    }
+
     await deleteStoredWalletAddress(WALLET_KEY);
     clearSessionKeypair();
     clearWalletSession();
@@ -741,10 +754,8 @@ export async function sendPayment(
     });
 
     // Use signTransaction — Phantom returns the signed tx, we submit it in the callback
-    const supported = await Linking.canOpenURL('phantom://');
-    const signUrl = supported
-      ? `phantom://ul/v1/signTransaction?${params.toString()}`
-      : `https://phantom.app/ul/v1/signTransaction?${params.toString()}`;
+    const signSchemeUrl = `phantom://ul/v1/signTransaction?${params.toString()}`;
+    const signUniversalUrl = `https://phantom.app/ul/v1/signTransaction?${params.toString()}`;
 
     if (pendingPayment) {
       rejectPendingPayment('Another payment request is already pending');
@@ -760,7 +771,7 @@ export async function sendPayment(
       pendingPayment = { resolve, reject, timeoutId };
     });
 
-    await Linking.openURL(signUrl);
+    await openWalletDeepLinkWithFallback(signSchemeUrl, signUniversalUrl);
 
     return await paymentPromise;
   } catch (error) {

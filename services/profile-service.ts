@@ -1,16 +1,20 @@
 import { getSupabase } from '@/services/supabase';
 import type { ProfileRow } from '@/types/database';
 
+function localProfile(walletAddress: string): ProfileRow {
+  return {
+    wallet_address: walletAddress,
+    display_name: null,
+    avatar_url: null,
+  } as ProfileRow;
+}
+
 // ─── Upsert Profile (create or update) ───
 // Called on every wallet connection to ensure the wallet is saved in Supabase.
 export async function upsertProfile(walletAddress: string): Promise<ProfileRow> {
   const supabase = getSupabase();
   if (!supabase) {
-    return {
-      wallet_address: walletAddress,
-      display_name: null,
-      avatar_url: null,
-    } as ProfileRow;
+    return localProfile(walletAddress);
   }
 
   // First try to find existing profile
@@ -21,8 +25,7 @@ export async function upsertProfile(walletAddress: string): Promise<ProfileRow> 
     .maybeSingle();
 
   if (fetchError) {
-    console.error('Error checking profile:', fetchError.message);
-    // Don't throw — profile creation is non-critical and shouldn't block wallet connection
+    return localProfile(walletAddress);
   }
 
   if (existing) {
@@ -53,9 +56,7 @@ export async function upsertProfile(walletAddress: string): Promise<ProfileRow> 
         return existingProfile as ProfileRow;
       }
     }
-
-    console.error('Error creating profile:', error.message);
-    throw new Error(`Failed to create profile: ${error.message}`);
+    return localProfile(walletAddress);
   }
 
   return data as ProfileRow;
@@ -73,7 +74,6 @@ export async function fetchProfileByWallet(walletAddress: string): Promise<Profi
     .maybeSingle();
 
   if (error) {
-    console.error('Error fetching profile:', error.message);
     return null;
   }
 

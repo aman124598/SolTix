@@ -3,14 +3,24 @@ import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseAnonKey =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const isNodeRuntime =
   typeof process !== 'undefined' &&
   !!process.versions?.node &&
   typeof window === 'undefined';
 
+function isLikelyValidSupabasePublicKey(key: string | undefined): boolean {
+  if (!key) return false;
+  const value = key.trim();
+  if (!value) return false;
+  if (value.includes('your_') || value.includes('secrxet')) return false;
+  return value.startsWith('eyJ') || value.startsWith('sb_publishable_');
+}
+
 export function isSupabaseConfigured(): boolean {
-  return !!supabaseUrl && !!supabaseAnonKey;
+  return !!supabaseUrl && isLikelyValidSupabasePublicKey(supabaseAnonKey);
 }
 
 let cachedClient: SupabaseClient | null | undefined;
@@ -23,7 +33,7 @@ export function getSupabase(): SupabaseClient | null {
     if (!loggedMissingOnce) {
       loggedMissingOnce = true;
       console.error(
-        'Supabase credentials missing. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY (EAS env/secrets) to enable backend features.'
+        'Supabase credentials missing/invalid. Using local mode.'
       );
     }
     cachedClient = null;

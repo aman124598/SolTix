@@ -142,7 +142,25 @@ export async function createTicket(params: {
 }): Promise<Ticket> {
   const supabase = getSupabase();
   if (!supabase) {
-    throw new Error('Supabase not configured. Ticket creation is disabled in offline/mock mode.');
+    const event = await fetchEventById(params.eventId);
+    if (!event) {
+      throw new Error(`Event not found for ticket creation: ${params.eventId}`);
+    }
+
+    return {
+      id: `local-ticket-${Date.now()}`,
+      eventId: params.eventId,
+      event,
+      mintAddress: params.mintAddress,
+      ownerWallet: params.ownerWallet,
+      purchasePrice: params.purchasePrice,
+      purchaseDate: new Date().toISOString(),
+      status: 'valid',
+      tokenAccount: params.tokenAccount,
+      metadataUri: params.metadataUri,
+      seatInfo: params.seatInfo,
+      tier: params.tier,
+    };
   }
 
   // Idempotency: check if a ticket with this txSignature already exists
@@ -191,7 +209,7 @@ export async function updateTicketStatus(
 ): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) {
-    throw new Error('Supabase not configured. Ticket updates are disabled in offline/mock mode.');
+    return;
   }
 
   const { data, error } = await supabase
@@ -217,7 +235,7 @@ export async function transferTicket(
 ): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) {
-    throw new Error('Supabase not configured. Ticket transfers are disabled in offline/mock mode.');
+    return;
   }
 
   // Get current ticket for audit logging

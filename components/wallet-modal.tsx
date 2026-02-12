@@ -2,7 +2,7 @@ import { WALLET_PROVIDERS } from '@/services/wallet-service';
 import { useWalletStore } from '@/store/wallet-store';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, Text, TouchableOpacity, View } from 'react-native';
 
 interface WalletModalProps {
   visible: boolean;
@@ -10,6 +10,7 @@ interface WalletModalProps {
 }
 
 export function WalletModal({ visible, onClose }: WalletModalProps) {
+  const LEGAL_URL = 'https://aman124598.github.io/SolTix/';
   const { connect, connecting, error, clearError } = useWalletStore();
 
   const handleConnect = async (providerName: string) => {
@@ -91,9 +92,11 @@ export function WalletModal({ visible, onClose }: WalletModalProps) {
           )}
 
           <View className="mt-4 items-center">
-            <Text className="text-gray-500 text-xs text-center">
-              By connecting, you agree to SolTix's Terms of Service
-            </Text>
+            <TouchableOpacity onPress={() => Linking.openURL(LEGAL_URL)}>
+              <Text className="text-gray-500 text-xs text-center">
+                By connecting, you agree to SolTix&apos;s Terms of Service
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>

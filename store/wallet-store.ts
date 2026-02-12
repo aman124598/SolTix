@@ -16,6 +16,7 @@ interface WalletStore {
   connecting: boolean;
   error: string | null;
   walletProvider: string | null;
+  sessionVersion: number;
 
   connect: (provider?: string) => Promise<void>;
   connectWithAddress: (address: string) => Promise<void>;
@@ -33,6 +34,7 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
   connecting: false,
   error: null,
   walletProvider: null,
+  sessionVersion: 0,
 
   connect: async (provider = 'phantom') => {
     set({ connecting: true, error: null, walletProvider: provider });
@@ -101,9 +103,9 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
   },
 
   disconnect: async () => {
-    try {
-      await disconnectWalletService();
-    } catch { }
+    const nextVersion = get().sessionVersion + 1;
+
+    // Optimistically clear app state first so UI disconnects immediately.
     set({
       connected: false,
       publicKey: null,
@@ -111,7 +113,14 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
       connecting: false,
       error: null,
       walletProvider: null,
+      sessionVersion: nextVersion,
     });
+
+    try {
+      await disconnectWalletService();
+    } catch (error) {
+      console.error('Error disconnecting wallet service:', error);
+    }
   },
 
   refreshBalance: async () => {
@@ -131,8 +140,11 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
   },
 
   restoreSession: async () => {
+    const versionAtStart = get().sessionVersion;
     try {
       const saved = await restoreSavedWallet();
+      if (get().sessionVersion !== versionAtStart) return;
+
       if (saved) {
         // Ensure profile exists in Supabase on session restore too
         upsertProfile(saved.publicKey).catch((err) =>
