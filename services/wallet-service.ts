@@ -1,4 +1,5 @@
 import { PublicKey } from '@solana/web3.js';
+import { ethers } from 'ethers';
 import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
@@ -96,6 +97,13 @@ export const WALLET_PROVIDERS: WalletProvider[] = [
     icon: '🔥',
     scheme: 'solflare',
     connectUrl: 'https://solflare.com/ul/v1/connect',
+    popular: true,
+  },
+  {
+    name: 'MetaMask',
+    icon: '🦊',
+    scheme: 'metamask',
+    connectUrl: 'https://metamask.app.link/dapp/soltix.app',
     popular: true,
   },
   {
@@ -237,6 +245,55 @@ export async function connectSolflareWallet(): Promise<{
   } catch (error) {
     console.error('Error connecting Solflare:', error);
     throw new Error('Failed to connect to Solflare wallet');
+  }
+}
+
+// ─── Connect via MetaMask ───
+export async function connectMetamaskWallet(): Promise<{
+  publicKey: string;
+  balance: number;
+} | null> {
+  // Desktop/Web: use browser extension
+  if (isWeb()) {
+    const ethereum = (window as any).ethereum;
+    if (!ethereum) {
+      window.open('https://metamask.io/download/', '_blank');
+      throw new Error('MetaMask extension not installed. Please install it and refresh the page.');
+    }
+    try {
+      await ethereum.request({ method: 'eth_requestAccounts' });
+      const accounts = await ethereum.request({ method: 'eth_accounts' });
+      const address = accounts[0];
+      const provider = new ethers.BrowserProvider(ethereum);
+      const balanceWei = await provider.getBalance(address);
+      const balance = parseFloat(ethers.formatEther(balanceWei));
+      await setStoredWalletAddress(WALLET_KEY, address);
+      return { publicKey: address, balance };
+    } catch (error: any) {
+      if (error?.code === 4001) {
+        throw new Error('Connection rejected by user');
+      }
+      throw new Error('Failed to connect to MetaMask extension');
+    }
+  }
+
+  // Mobile: use deep link
+  try {
+    const dappUrl = 'https://soltix.app';
+    const connectUrl = `https://metamask.app.link/dapp/${dappUrl}`;
+
+    const supported = await Linking.canOpenURL('metamask://');
+
+    if (supported) {
+      await Linking.openURL(connectUrl);
+      return null; // Will be resolved via deep link callback or manual entry
+    } else {
+      await Linking.openURL('https://metamask.io/download/');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error connecting MetaMask:', error);
+    throw new Error('Failed to connect to MetaMask wallet');
   }
 }
 

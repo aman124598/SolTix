@@ -1,5 +1,6 @@
 import { getBalance } from '@/services/solana';
 import {
+  connectMetamaskWallet,
   connectPhantomWallet,
   connectSolflareWallet,
   disconnectWallet as disconnectWalletService,
@@ -42,6 +43,8 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
         result = await connectPhantomWallet();
       } else if (provider === 'solflare') {
         result = await connectSolflareWallet();
+      } else if (provider === 'metamask') {
+        result = await connectMetamaskWallet();
       } else {
         result = await connectPhantomWallet();
       }

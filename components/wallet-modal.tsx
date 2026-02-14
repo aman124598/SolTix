@@ -3,6 +3,7 @@ import { useWalletStore } from '@/store/wallet-store';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
 
 interface WalletModalProps {
   visible: boolean;
@@ -21,12 +22,12 @@ export function WalletModal({ visible, onClose }: WalletModalProps) {
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="fade"
       transparent
       onRequestClose={onClose}
     >
       <View className="flex-1 justify-end bg-black/60">
-        <View className="bg-surface-dark rounded-t-3xl px-6 pt-6 pb-10">
+        <Animated.View entering={SlideInUp.duration(500)} className="bg-surface-dark rounded-t-3xl px-6 pt-6 pb-10">
           {/* Handle */}
           <View className="w-10 h-1 bg-gray-600 rounded-full self-center mb-6" />
 
@@ -39,17 +40,17 @@ export function WalletModal({ visible, onClose }: WalletModalProps) {
           </View>
 
           <Text className="text-gray-400 text-sm mb-6">
-            Choose your preferred Solana wallet to connect and start using SolTix.
+            Choose your preferred wallet to connect and start using SolTix. Supports Solana and Ethereum wallets.
           </Text>
 
           {error && (
-            <View className="bg-red-500/20 border border-red-500/30 rounded-xl p-3 mb-4 flex-row items-center">
+            <Animated.View entering={FadeIn} className="bg-red-500/20 border border-red-500/30 rounded-xl p-3 mb-4 flex-row items-center">
               <Ionicons name="warning" size={18} color="#ef4444" />
               <Text className="text-red-400 text-sm ml-2 flex-1">{error}</Text>
               <TouchableOpacity onPress={clearError}>
                 <Ionicons name="close-circle" size={18} color="#ef4444" />
               </TouchableOpacity>
-            </View>
+            </Animated.View>
           )}
 
           {connecting ? (
@@ -64,38 +65,42 @@ export function WalletModal({ visible, onClose }: WalletModalProps) {
             </View>
           ) : (
             <View>
-              {WALLET_PROVIDERS.map((wallet) => (
-                <TouchableOpacity
+              {WALLET_PROVIDERS.map((wallet, index) => (
+                <Animated.View
                   key={wallet.name}
-                  onPress={() => handleConnect(wallet.name)}
-                  className="flex-row items-center bg-surface-card rounded-xl p-4 mb-3"
-                  activeOpacity={0.7}
+                  entering={FadeIn.delay(index * 100).duration(400)}
                 >
-                  <Text className="text-2xl mr-3">{wallet.icon}</Text>
-                  <View className="flex-1">
-                    <Text className="text-white font-semibold text-base">
-                      {wallet.name}
-                    </Text>
-                  </View>
-                  {wallet.popular && (
-                    <View className="bg-solana-purple/20 px-2.5 py-1 rounded-full mr-2">
-                      <Text className="text-solana-purple text-xs font-medium">
-                        Popular
+                  <TouchableOpacity
+                    onPress={() => handleConnect(wallet.name)}
+                    className="flex-row items-center bg-surface-card rounded-xl p-4 mb-3"
+                    activeOpacity={0.7}
+                  >
+                    <Text className="text-2xl mr-3">{wallet.icon}</Text>
+                    <View className="flex-1">
+                      <Text className="text-white font-semibold text-base">
+                        {wallet.name}
                       </Text>
                     </View>
-                  )}
-                  <Ionicons name="chevron-forward" size={18} color="#6b7280" />
-                </TouchableOpacity>
+                    {wallet.popular && (
+                      <View className="bg-solana-purple/20 px-2.5 py-1 rounded-full mr-2">
+                        <Text className="text-solana-purple text-xs font-medium">
+                          Popular
+                        </Text>
+                      </View>
+                    )}
+                    <Ionicons name="chevron-forward" size={18} color="#6b7280" />
+                  </TouchableOpacity>
+                </Animated.View>
               ))}
             </View>
           )}
 
           <View className="mt-4 items-center">
             <Text className="text-gray-500 text-xs text-center">
-              By connecting, you agree to SolTix's Terms of Service
+              By connecting, you agree to SolTix&apos;s Terms of Service
             </Text>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
