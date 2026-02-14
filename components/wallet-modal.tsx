@@ -1,13 +1,9 @@
-import { WALLET_PROVIDERS } from '@/services/wallet-service';
+import { WALLET_PROVIDERS, type WalletProvider } from '@/services/wallet-service';
 import { useWalletStore } from '@/store/wallet-store';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-<<<<<<< HEAD
-import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
-=======
 import { ActivityIndicator, Linking, Modal, Text, TouchableOpacity, View } from 'react-native';
->>>>>>> fff3fdb02f3bfbb07583fb184bdba0c3d658cc4c
+import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
 
 interface WalletModalProps {
   visible: boolean;
@@ -18,7 +14,7 @@ export function WalletModal({ visible, onClose }: WalletModalProps) {
   const LEGAL_URL = 'https://aman124598.github.io/SolTix/';
   const { connect, connecting, error, clearError } = useWalletStore();
 
-  const handleConnect = async (providerId: 'phantom' | 'solflare') => {
+  const handleConnect = async (providerId: WalletProvider['id']) => {
     await connect(providerId);
     // Connection completes via deep link callback — don't close yet
     // The root layout's deep link handler will call connectWithAddress
@@ -73,16 +69,10 @@ export function WalletModal({ visible, onClose }: WalletModalProps) {
               {WALLET_PROVIDERS.map((wallet, index) => (
                 <Animated.View
                   key={wallet.name}
-<<<<<<< HEAD
                   entering={FadeIn.delay(index * 100).duration(400)}
-=======
-                  onPress={() => handleConnect(wallet.id)}
-                  className="flex-row items-center bg-surface-card rounded-xl p-4 mb-3"
-                  activeOpacity={0.7}
->>>>>>> fff3fdb02f3bfbb07583fb184bdba0c3d658cc4c
                 >
                   <TouchableOpacity
-                    onPress={() => handleConnect(wallet.name)}
+                    onPress={() => handleConnect(wallet.id)}
                     className="flex-row items-center bg-surface-card rounded-xl p-4 mb-3"
                     activeOpacity={0.7}
                   >
@@ -107,17 +97,11 @@ export function WalletModal({ visible, onClose }: WalletModalProps) {
           )}
 
           <View className="mt-4 items-center">
-<<<<<<< HEAD
-            <Text className="text-gray-500 text-xs text-center">
-              By connecting, you agree to SolTix&apos;s Terms of Service
-            </Text>
-=======
             <TouchableOpacity onPress={() => Linking.openURL(LEGAL_URL)}>
               <Text className="text-gray-500 text-xs text-center">
                 By connecting, you agree to SolTix&apos;s Terms of Service
               </Text>
             </TouchableOpacity>
->>>>>>> fff3fdb02f3bfbb07583fb184bdba0c3d658cc4c
           </View>
         </Animated.View>
       </View>

@@ -1,11 +1,7 @@
 import 'react-native-get-random-values';
 import { PublicKey } from '@solana/web3.js';
-<<<<<<< HEAD
-import { ethers } from 'ethers';
-=======
 import bs58 from 'bs58';
 import * as Crypto from 'expo-crypto';
->>>>>>> fff3fdb02f3bfbb07583fb184bdba0c3d658cc4c
 import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
 import nacl from 'tweetnacl';
@@ -98,7 +94,7 @@ async function deleteStoredWalletAddress(key: string): Promise<void> {
 
 // ─── Supported Wallets ───
 export interface WalletProvider {
-  id: 'phantom' | 'solflare';
+  id: 'phantom' | 'solflare' | 'metamask';
   name: string;
   icon: string;
   scheme: string; // deep link scheme
@@ -123,30 +119,14 @@ export const WALLET_PROVIDERS: WalletProvider[] = [
     connectUrl: 'https://solflare.com/ul/v1/connect',
     popular: true,
   },
-<<<<<<< HEAD
   {
+    id: 'metamask',
     name: 'MetaMask',
     icon: '🦊',
     scheme: 'metamask',
     connectUrl: 'https://metamask.app.link/dapp/soltix.app',
     popular: true,
   },
-  {
-    name: 'Backpack',
-    icon: '🎒',
-    scheme: 'backpack',
-    connectUrl: 'https://backpack.app/ul/v1/connect',
-    popular: false,
-  },
-  {
-    name: 'Glow',
-    icon: '✨',
-    scheme: 'glow',
-    connectUrl: 'glow://connect',
-    popular: false,
-  },
-=======
->>>>>>> fff3fdb02f3bfbb07583fb184bdba0c3d658cc4c
 ];
 
 // ─── Session Encryption Keypair (for Phantom deep link flow) ───
@@ -494,7 +474,6 @@ export async function connectSolflareWallet(): Promise<{
   }
 }
 
-<<<<<<< HEAD
 // ─── Connect via MetaMask ───
 export async function connectMetamaskWallet(): Promise<{
   publicKey: string;
@@ -511,9 +490,14 @@ export async function connectMetamaskWallet(): Promise<{
       await ethereum.request({ method: 'eth_requestAccounts' });
       const accounts = await ethereum.request({ method: 'eth_accounts' });
       const address = accounts[0];
-      const provider = new ethers.BrowserProvider(ethereum);
-      const balanceWei = await provider.getBalance(address);
-      const balance = parseFloat(ethers.formatEther(balanceWei));
+      const balanceHex = await ethereum.request({
+        method: 'eth_getBalance',
+        params: [address, 'latest'],
+      });
+      const balanceWei = BigInt(String(balanceHex));
+      const whole = balanceWei / 10n ** 18n;
+      const fractional = (balanceWei % 10n ** 18n).toString().padStart(18, '0').slice(0, 6);
+      const balance = Number.parseFloat(`${whole.toString()}.${fractional}`);
       await setStoredWalletAddress(WALLET_KEY, address);
       return { publicKey: address, balance };
     } catch (error: any) {
@@ -543,8 +527,6 @@ export async function connectMetamaskWallet(): Promise<{
     throw new Error('Failed to connect to MetaMask wallet');
   }
 }
-=======
->>>>>>> fff3fdb02f3bfbb07583fb184bdba0c3d658cc4c
 
 // ─── Handle Deep Link Callback ───
 export async function handleWalletCallback(
